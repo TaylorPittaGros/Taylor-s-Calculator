@@ -1,26 +1,29 @@
-from app import operations
-from app.utils import get_number
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+from app.api import router as calc_router
 
-def run():
-    while True:
-        print("\n1. Add\n2. Subtract\n3. Exit")
+app = FastAPI(
+    title="Taylor's Calculator API",
+    description="Simple RESTful math operations with clean error handling.",
+    version="1.0.0"
+)
 
-        choice = input("Choose: ")
+@app.get("/")
+def read_root():
+    return {
+        "message": "✅ Taylor's Calculator is running!",
+        "docs": "/docs",
+        "status": "ok"
+    }
 
-        if choice == "1":
-            a = get_number("A: ")
-            b = get_number("B: ")
-            print("Result:", operations.add(a, b))
+# Exception handler for validation errors
+@app.exception_handler(ValidationError)
+async def validation_exception_handler(request: Request, exc: ValidationError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": "Invalid input", "errors": exc.errors()},
+    )
 
-        elif choice == "2":
-            a = get_number("A: ")
-            b = get_number("B: ")
-            print("Result:", operations.subtract(a, b))
-
-        elif choice == "3":
-            break
-
-        else:
-            print("Invalid")
-
-run()
+# Include the calculator router under /calc prefix
+app.include_router(calc_router)
